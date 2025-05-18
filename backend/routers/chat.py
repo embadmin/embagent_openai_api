@@ -1,0 +1,43 @@
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from openai import OpenAI
+import os
+
+router = APIRouter()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+class ChatRequest(BaseModel):
+    message: str
+    icon: str
+    name: str
+    mission: str
+    knowledge: str  # 👈 add this line
+
+@router.post("/chat")
+async def chat_with_agent(payload: ChatRequest):
+    prompt = f"""
+You are an expert agent named {payload.name}.
+Your mission is: {payload.mission}
+
+Here is your reference knowledge:
+\"\"\"
+{payload.knowledge}
+\"\"\"
+
+Only answer questions using the above knowledge. Do not make assumptions or respond outside of this data. If the question is not related to the knowledge, respond with "Sorry, this request is outside of my scope of knowledge!".
+
+User: {payload.message}
+"""
+
+    try:
+        response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+        {"role": "system", "content": f"You are {payload.name}, a helpful domain expert."},
+        {"role": "user", "content": prompt}
+        ],
+        temperature=0.7
+)
+        return {"response": response.choices[0].message.content.strip()}
+    except Exception as e:
+        return {"response": f"Error: {str(e)}"}
