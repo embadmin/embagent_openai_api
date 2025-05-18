@@ -1,3 +1,7 @@
+const API_BASE = window.location.hostname === "localhost"
+  ? "http://127.0.0.1:8000"
+  : "https://embagent-openai-api.onrender.com"; // 👈 replace with your actual Render URL
+
 let userAgent = {
     icon: null,
     name: null,
@@ -79,7 +83,7 @@ let userAgent = {
         formData.append("file", userAgent.file);
         formData.append("usecase", `${userAgent.name} - ${userAgent.mission}`);
       
-        const res = await fetch("http://127.0.0.1:8000/upload", {
+        const res = await fetch(`${API_BASE}/upload`, {
           method: "POST",
           body: formData,
         });
@@ -126,7 +130,7 @@ let userAgent = {
       
         appendMessage("user", userText);
         input.value = "";
-        const response = await fetch("http://127.0.0.1:8000/chat", {
+        const response = await fetch(`${API_BASE}/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
