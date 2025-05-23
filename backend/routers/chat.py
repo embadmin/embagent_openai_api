@@ -1,44 +1,50 @@
-from fastapi import APIRouter, Request
-from openai import OpenAI
+from fastapi import APIRouter
 from pydantic import BaseModel
+from openai import OpenAI
 
 router = APIRouter()
 client = OpenAI()
 
+# Temporary in-memory chat histories (reset on server restart)
+chat_histories = {}
+
 class ChatInput(BaseModel):
+    session_id: str  # unique ID to track conversation
     message: str
     icon: str
     name: str
     mission: str
-    knowledge: str
     expertise: str
     etiquette: str
     links: str
 
 @router.post("/chat")
 async def chat(input: ChatInput):
-    # 🔧 Construct a full system prompt on every message
     system_prompt = f"""
-    You are a helpful AI assistant named {input.name}.
+You are an AI assistant named {input.name}.
+Mission: {input.mission}
+Expertise: {input.expertise}
+Tone: {input.etiquette}
+Reference: {input.links}
 
-    Mission: {input.mission}
-    Domain Expertise: {input.expertise}
-    Tone: {input.etiquette}
-    Reference Links: {input.links}
+Be helpful and respond based on prior messages in this session.
+"""
 
-    Knowledge Base:
-    {input.knowledge}
+    # Start or update session history
+    history = chat_histories.get(input.session_id, [])
+    if not history:
+        history.append({"role": "system", "content": system_prompt})
 
-    Please respond helpfully and clearly using only the information above. Do not mention that you're an AI. Stay in character and remain consistent with your tone and mission.
-    """
+    history.append({"role": "user", "content": input.message})
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": input.message}
-        ],
+        messages=history,
         temperature=0.7,
     )
 
-    return {"response": response.choices[0].message.content.strip()}
+    bot_reply = response.choices[0].message.content.strip()
+    history.append({"role": "assistant", "content": bot_reply})
+    chat_histories[input.session_id] = history  # save for next round
+
+    return {"response": bot_reply}
