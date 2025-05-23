@@ -36,7 +36,7 @@ Only use the above knowledge when crafting your reply. If the information is not
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        initial_context = f"""
+        initial_context = f'''
         You are a helpful AI assistant with the following background:
 
         Use Case: {usecase}
@@ -48,7 +48,7 @@ Only use the above knowledge when crafting your reply. If the information is not
         {knowledge}
 
         Begin with a friendly tone and always refer to the above context.
-        """
+        '''
 
         messages = [
             {"role": "system", "content": initial_context},
