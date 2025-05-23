@@ -4,17 +4,17 @@ from backend.routers import upload, chat
 
 app = FastAPI()
 
-
+# ✅ Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this later to your deployed frontend
+    allow_origins=["*"],  # Use specific origin in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 app.include_router(upload.router)
-app.include_router(upload.router)
-app.include_router(chat.router)  
+app.include_router(chat.router)
 @app.get("/")
 def home():
     return {"msg": "Embagent API running"}
