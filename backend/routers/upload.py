@@ -1,9 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, Form
-from typing import List
+from typing import List, Optional
 import os
 from PyPDF2 import PdfReader
 import docx
 from openai import OpenAI
+
+
 
 router = APIRouter()
 client = OpenAI()
@@ -30,19 +32,23 @@ async def extract_text_from_file(file: UploadFile) -> str:
     else:
         return f"[Unsupported file type: {file.filename}]"
 
-# 🔹 Your /upload endpoint
+
 @router.post("/upload")
 async def upload_file(
-    files: List[UploadFile] = File(...),
+    files: Optional[List[UploadFile]] = File(None),  # ✅ make optional
     usecase: str = Form(...),
     expertise: str = Form(...),
     etiquette: str = Form(...),
     links: str = Form(...)
 ):
     all_text = ""
-    for file in files:
-        text = await extract_text_from_file(file)
-        all_text += f"\n\n---\n{file.filename}\n{text}"
+
+        if files:
+            for file in files:
+                text = await extract_text_from_file(file)
+                all_text += f"\n\n---\n{file.filename}\n{text}"
+        else:
+            all_text = "[No files uploaded]"
 
     prompt = f"""
 You are a helpful AI agent with the following traits:
