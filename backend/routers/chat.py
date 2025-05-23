@@ -36,9 +36,23 @@ Only use the above knowledge when crafting your reply. If the information is not
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that only answers from internal knowledge."},
-            {"role": "user", "content": prompt}
+        initial_context = f"""
+        You are a helpful AI assistant with the following background:
+
+        Use Case: {usecase}
+        Expertise: {expertise}
+        Tone: {etiquette}
+        Reference Links: {links}
+
+        Only answer questions using this internal knowledge:
+        {knowledge}
+
+        Begin with a friendly tone and always refer to the above context.
+        """
+
+        messages = [
+            {"role": "system", "content": initial_context},
+            {"role": "user", "content": message}
         ],
         temperature=0.7
     )
