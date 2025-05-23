@@ -10,74 +10,78 @@ from openai import OpenAI
 router = APIRouter()
 client = OpenAI()
 
-# 🔹 File reader logic
 async def extract_text_from_file(file: UploadFile) -> str:
-    content = await file.read()
-    filename = file.filename.lower()
+    try:
+        content = await file.read()
+        filename = file.filename.lower()
 
-    if filename.endswith(".txt"):
-        return content.decode("utf-8")
-    elif filename.endswith(".pdf"):
-        temp_path = f"/tmp/{file.filename}"
-        with open(temp_path, "wb") as f:
-            f.write(content)
-        reader = PdfReader(temp_path)
-        return "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
-    elif filename.endswith(".docx"):
-        temp_path = f"/tmp/{file.filename}"
-        with open(temp_path, "wb") as f:
-            f.write(content)
-        doc = docx.Document(temp_path)
-        return "\n".join(p.text for p in doc.paragraphs)
-    else:
-        return f"[Unsupported file type: {file.filename}]"
+        if filename.endswith(".txt"):
+            return content.decode("utf-8")
 
+        elif filename.endswith(".pdf"):
+            temp_path = f"/tmp/{file.filename}"
+            with open(temp_path, "wb") as f:
+                f.write(content)
+            reader = PdfReader(temp_path)
+            return "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
+
+        elif filename.endswith(".docx"):
+            temp_path = f"/tmp/{file.filename}"
+            with open(temp_path, "wb") as f:
+                f.write(content)
+            doc = docx.Document(temp_path)
+            return "\n".join(p.text for p in doc.paragraphs)
+
+        else:
+            return f"[Unsupported file type: {file.filename}]"
+
+    except Exception as e:
+        return f"[Error reading {file.filename}: {str(e)}]"
 
 @router.post("/upload")
 async def upload_file(
-    files: Optional[List[UploadFile]] = File(None),  # ✅ make optional
+    files: Optional[List[UploadFile]] = File(None),
     usecase: str = Form(...),
-    expertise: str = Form(...),
-    etiquette: str = Form(...),
-    links: str = Form(...)
+    expertise: str = Form(""),
+    etiquette: str = Form(""),
+    links: str = Form("")
 ):
-    all_text = ""
+    try:
+        all_text = ""
+        if files:
+            for file in files:
+                text = await extract_text_from_file(file)
+                all_text += f"\n\n---\n{file.filename}\n{text}"
+        else:
+            all_text = "[No files uploaded]"
 
-    if files:
-        for file in files:
-            text = await extract_text_from_file(file)
-            all_text += f"\n\n---\n{file.filename}\n{text}"
-    else:
-        all_text = "[No files uploaded]"
-
-        prompt = f"""You are a specialized AI assistant.
-
-        Your mission is: {usecase}
-        Your domain expertise is: {expertise}
-        Your tone/personality is: {etiquette}
-        Use the following links as reference: {links}
-
-        Only respond based on this internal knowledge or the provided links. Do not include any external information:
-        {all_text}
-
-        Begin your response with a friendly greeting and ask how you can help.
+        prompt = f"""
+        You are a helpful AI agent with the following context:
+        Use Case: {usecase}
+        Expertise: {expertise}
+        Tone: {etiquette}
+        Reference Links: {links}
+        Knowledge Base: {all_text}
         """
 
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7,
-    )
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+        )
 
-    first_message = response.choices[0].message.content.strip()
-    return {
-        "received_files": [f.filename for f in files] if files else [],
-        "usecase": usecase,
-        "expertise": expertise,
-        "etiquette": etiquette,
-        "links": links,
-        "bot_response": first_message  # ✅ send it to the frontend
-    }
+        return {
+            "bot_response": response.choices[0].message.content.strip(),
+            "received_files": [f.filename for f in files] if files else [],
+            "usecase": usecase,
+            "expertise": expertise,
+            "etiquette": etiquette,
+            "links": links
+        }
+
+    except Exception as e:
+        print("❌ Upload error:", str(e))
+        return {"error": str(e)}
