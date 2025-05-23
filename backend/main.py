@@ -4,13 +4,14 @@ from backend.routers import upload, chat
 
 app = FastAPI()
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Limit to frontend origin in production
+    allow_origins=["*"],  # You can restrict this later to your deployed frontend
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(upload.router)
 app.include_router(upload.router)
 app.include_router(chat.router)  

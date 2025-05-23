@@ -51,16 +51,16 @@ async def upload_file(
         all_text = "[No files uploaded]"
 
     prompt = f"""
-You are a helpful AI agent with the following traits:
+    You are a helpful AI agent with the following traits:
 
-Use Case: {usecase}
-Expertise: {expertise}
-Tone: {etiquette}
-Links provided: {links}
+    Use Case: {usecase}
+    Expertise: {expertise}
+    Tone: {etiquette}
+    Links provided: {links}
 
-Base your answers only on the following knowledge:
-{all_text}
-"""
+    Base your answers only on the following knowledge:
+    {all_text}
+    """
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -72,7 +72,7 @@ Base your answers only on the following knowledge:
     )
 
     return {
-        "received_files": [f.filename for f in files],
+        "received_files": [f.filename for f in files] if files else [],
         "usecase": usecase,
         "expertise": expertise,
         "etiquette": etiquette,
