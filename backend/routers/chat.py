@@ -11,20 +11,27 @@ class ChatRequest(BaseModel):
     icon: str
     name: str
     mission: str
-    knowledge: str  # 👈 add this line
+    knowledge: str
+    expertise: str
+    etiquette: str
+    links: str
 
 @router.post("/chat")
 async def chat_with_agent(payload: ChatRequest):
-    prompt = f"""
-You are an expert agent named {payload.name}.
-Your mission is: {payload.mission}
+prompt = f"""
+You are an expert AI assistant named {payload.name}.
 
-Here is your reference knowledge:
+Mission: {payload.mission}
+Expertise: {payload.expertise}
+Tone: {payload.etiquette}
+Links (for reference): {payload.links}
+
+Use only the following internal knowledge to answer the user's question:
 \"\"\"
 {payload.knowledge}
 \"\"\"
 
-Only answer questions using the above knowledge. Do not make assumptions or respond outside of this data. If the question is not related to the knowledge, respond with "Sorry, this request is outside of my scope of knowledge!".
+Only answer questions using the above knowledge. Do not make assumptions or provide generic advice outside this data. If unsure, say: "Sorry, this request is outside of my scope of knowledge!".
 
 User: {payload.message}
 """

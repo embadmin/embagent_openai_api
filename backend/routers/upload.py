@@ -50,19 +50,18 @@ async def upload_file(
     else:
         all_text = "[No files uploaded]"
 
-    prompt = f"""
-    You are a specialized AI assistant.
+        prompt = f"""You are a specialized AI assistant.
 
-    Your mission is: {usecase}
-    Your domain expertise is: {expertise}
-    Your tone/personality is: {etiquette}
-    Use the following links as reference: {links}
+        Your mission is: {usecase}
+        Your domain expertise is: {expertise}
+        Your tone/personality is: {etiquette}
+        Use the following links as reference: {links}
 
-    Only respond based on this internal knowledge:
-    {all_text}
+        Only respond based on this internal knowledge or the provided links. Do not include any external information:
+        {all_text}
 
-    Begin your response with a friendly greeting and ask how you can help.
-    """
+        Begin your response with a friendly greeting and ask how you can help.
+        """
 
     response = client.chat.completions.create(
         model="gpt-4o",
