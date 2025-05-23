@@ -51,15 +51,17 @@ async def upload_file(
         all_text = "[No files uploaded]"
 
     prompt = f"""
-    You are a helpful AI agent with the following traits:
+    You are a specialized AI assistant.
 
-    Use Case: {usecase}
-    Expertise: {expertise}
-    Tone: {etiquette}
-    Links provided: {links}
+    Your mission is: {usecase}
+    Your domain expertise is: {expertise}
+    Your tone/personality is: {etiquette}
+    Use the following links as reference: {links}
 
-    Base your answers only on the following knowledge:
+    Only respond based on this internal knowledge:
     {all_text}
+
+    Begin your response with a friendly greeting and ask how you can help.
     """
 
     response = client.chat.completions.create(
@@ -71,10 +73,12 @@ async def upload_file(
         temperature=0.7,
     )
 
+    first_message = response.choices[0].message.content.strip()
     return {
         "received_files": [f.filename for f in files] if files else [],
         "usecase": usecase,
         "expertise": expertise,
         "etiquette": etiquette,
-        "links": links
+        "links": links,
+        "bot_response": first_message  # ✅ send it to the frontend
     }
