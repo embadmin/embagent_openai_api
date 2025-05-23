@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from pydantic import BaseModel
 from openai import OpenAI
 import os
@@ -18,7 +18,7 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 async def chat_with_agent(payload: ChatRequest):
-    prompt = f\"""
+    prompt = f"""
 You are an expert AI assistant named {payload.name}.
 
 Mission: {payload.mission}
@@ -35,7 +35,7 @@ Only answer questions using the above knowledge. Do not make assumptions or prov
 If unsure, say: "Sorry, this request is outside of my scope of knowledge!".
 
 User: {payload.message}
-\"""
+"""
 
     try:
         response = client.chat.completions.create(
@@ -49,11 +49,3 @@ User: {payload.message}
         return {"response": response.choices[0].message.content.strip()}
     except Exception as e:
         return {"response": f"Error: {str(e)}"}
-"""
-
-# Save the updated file
-chat_py_file_path = "/mnt/data/embagent_openai_api/embagent_openai_api/backend/routers/chat.py"
-with open(chat_py_file_path, "w") as f:
-    f.write(updated_chat_py)
-
-chat_py_file_path  # Returning path for confirmation
