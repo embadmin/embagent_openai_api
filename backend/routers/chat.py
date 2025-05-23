@@ -1,50 +1,48 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, Request
 from openai import OpenAI
 
 router = APIRouter()
 client = OpenAI()
 
-# Temporary in-memory chat histories (reset on server restart)
-chat_histories = {}
-
-class ChatInput(BaseModel):
-    session_id: str
-    message: str
-    icon: str
-    name: str
-    mission: str
-    expertise: str
-    etiquette: str
-    links: str
-
 @router.post("/chat")
-async def chat(input: ChatInput):
-    system_prompt = f"""
-You are an AI assistant named {input.name}.
-Mission: {input.mission}
-Expertise: {input.expertise}
-Tone: {input.etiquette}
-Reference: {input.links}
+async def chat_with_agent(request: Request):
+    data = await request.json()
 
-Be helpful and respond based on prior messages in this session.
+    message = data.get("message", "")
+    name = data.get("name", "Agent")
+    icon = data.get("icon", "default.png")
+    mission = data.get("mission", "")
+    expertise = data.get("expertise", "")
+    etiquette = data.get("etiquette", "")
+    links = data.get("links", "")
+    knowledge = data.get("knowledge", "")
+
+    # Construct prompt with persistent context
+    prompt = f"""
+You are a helpful AI assistant named {name} with the following configuration:
+
+• 🎯 Mission: {mission}
+• 📘 Expertise: {expertise}
+• 💬 Tone / Etiquette: {etiquette}
+• 🔗 Reference Links: {links}
+
+Use the internal knowledge below to guide your answers:
+{knowledge}
+
+User asked: {message}
+
+Only use the above knowledge when crafting your reply. If the information is not available in the provided context, politely let the user know.
 """
-
-    # Start or update session history
-    history = chat_histories.get(input.session_id, [])
-    if not history:
-        history.append({"role": "system", "content": system_prompt})
-
-    history.append({"role": "user", "content": input.message})
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=history,
-        temperature=0.7,
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that only answers from internal knowledge."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7
     )
 
-    bot_reply = response.choices[0].message.content.strip()
-    history.append({"role": "assistant", "content": bot_reply})
-    chat_histories[input.session_id] = history  # save for next round
-
-    return {"response": bot_reply}
+    return {
+        "response": response.choices[0].message.content.strip()
+    }
