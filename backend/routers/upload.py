@@ -43,12 +43,12 @@ async def upload_file(
 ):
     all_text = ""
 
-        if files:
-            for file in files:
-                text = await extract_text_from_file(file)
-                all_text += f"\n\n---\n{file.filename}\n{text}"
-        else:
-            all_text = "[No files uploaded]"
+    if files:
+        for file in files:
+            text = await extract_text_from_file(file)
+            all_text += f"\n\n---\n{file.filename}\n{text}"
+    else:
+        all_text = "[No files uploaded]"
 
     prompt = f"""
 You are a helpful AI agent with the following traits:
