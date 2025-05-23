@@ -9,7 +9,7 @@ client = OpenAI()
 chat_histories = {}
 
 class ChatInput(BaseModel):
-    session_id: str  # unique ID to track conversation
+    session_id: str
     message: str
     icon: str
     name: str
