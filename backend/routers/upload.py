@@ -62,6 +62,7 @@ async def upload_file(
         Tone: {etiquette}
         Reference Links: {links}
         Knowledge Base: {all_text}
+        Please first send an introduction message for yourself according to the tone and information provided. Only one introduction message is allowed.
         """
 
         response = client.chat.completions.create(
