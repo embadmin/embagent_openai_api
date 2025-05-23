@@ -1,12 +1,11 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, Request
 from openai import OpenAI
-import os
+from pydantic import BaseModel
 
 router = APIRouter()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI()
 
-class ChatRequest(BaseModel):
+class ChatInput(BaseModel):
     message: str
     icon: str
     name: str
@@ -17,35 +16,29 @@ class ChatRequest(BaseModel):
     links: str
 
 @router.post("/chat")
-async def chat_with_agent(payload: ChatRequest):
-    prompt = f"""
-You are an expert AI assistant named {payload.name}.
+async def chat(input: ChatInput):
+    # 🔧 Construct a full system prompt on every message
+    system_prompt = f"""
+    You are a helpful AI assistant named {input.name}.
 
-Mission: {payload.mission}
-Expertise: {payload.expertise}
-Tone: {payload.etiquette}
-Links (for reference): {payload.links}
+    Mission: {input.mission}
+    Domain Expertise: {input.expertise}
+    Tone: {input.etiquette}
+    Reference Links: {input.links}
 
-Use only the following internal knowledge to answer the user's question:
-\"\"\"
-{payload.knowledge}
-\"\"\"
+    Knowledge Base:
+    {input.knowledge}
 
-Only answer questions using the above knowledge. Do not make assumptions or provide generic advice outside this data. 
-If unsure, say: "Sorry, this request is outside of my scope of knowledge!".
+    Please respond helpfully and clearly using only the information above. Do not mention that you're an AI. Stay in character and remain consistent with your tone and mission.
+    """
 
-User: {payload.message}
-"""
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": input.message}
+        ],
+        temperature=0.7,
+    )
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": f"You are {payload.name}, a helpful domain expert."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7
-        )
-        return {"response": response.choices[0].message.content.strip()}
-    except Exception as e:
-        return {"response": f"Error: {str(e)}"}
+    return {"response": response.choices[0].message.content.strip()}
