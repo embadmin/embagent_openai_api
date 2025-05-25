@@ -74,13 +74,15 @@ async def upload_file(
             temperature=0.7,
         )
 
+        first_message = response.choices[0].message.content.strip()
+
         return {
-            "bot_response": response.choices[0].message.content.strip(),
             "received_files": [f.filename for f in files] if files else [],
             "usecase": usecase,
             "expertise": expertise,
             "etiquette": etiquette,
-            "links": links
+            "links": links,
+            "bot_response": first_message
         }
 
     except Exception as e:
