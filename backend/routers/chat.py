@@ -1,3 +1,9 @@
+from fastapi import APIRouter, Request
+from openai import OpenAI
+
+router = APIRouter()
+client = OpenAI()
+
 @router.post("/chat")
 async def chat_with_agent(request: Request):
     data = await request.json()
