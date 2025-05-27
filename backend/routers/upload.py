@@ -88,7 +88,7 @@ async def upload_file(
             "expertise": expertise,
             "etiquette": etiquette,
             "links": links,
-            "bot_response": first_message
+            "knowledgeText": response.choices[0].message.content.strip()  # 👈 Match frontend key
         }
 
     except Exception as e:
