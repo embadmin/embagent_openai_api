@@ -32,8 +32,14 @@ async def extract_text_from_file(file: UploadFile) -> str:
             doc = docx.Document(temp_path)
             return "\n".join(p.text for p in doc.paragraphs)
 
+        elif filename.endswith((".py", ".js", ".html", ".css", ".json", ".java", ".cpp", ".c", ".ts")):
+            return content.decode("utf-8")
+
+        elif filename.endswith((".png", ".jpg", ".jpeg")):
+            return f"[Image file uploaded: {file.filename}]"
+
         else:
-            return f"[Unsupported file type: {file.filename}]"
+            return f"[Unsupported file type: {file.filename}. This type is not supported yet — but coming soon!]"
 
     except Exception as e:
         return f"[Error reading {file.filename}: {str(e)}]"
