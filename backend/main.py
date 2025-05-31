@@ -8,7 +8,7 @@ app = FastAPI()
 # 1. List the origins you want to allow. For dev you can use ["*"], but
 #    in production you should list only your actual frontend domain(s).
 origins = [
-    "http://localhost:3000",           # your local dev site
+    "http://localhost:3000/embagent",           # your local dev site
     "https://www.embagent.com",      # your production site
     # add more as needed
 ]
