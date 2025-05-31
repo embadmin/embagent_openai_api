@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import upload, chat
+from backend.routers import upload, chat
 
 app = FastAPI()
 
