@@ -1,27 +1,22 @@
+# backend/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# === import your routers from the backend package ===
-from backend.routers.upload import router as upload_router
-from backend.routers.chat   import router as chat_router
+from routers import upload, chat
 
 app = FastAPI()
 
-# CORS settings
+# 1) Allow CORS from your frontend origin (http://localhost:3000 or your domain)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://<your-vercel-domain>.vercel.app",
-    ],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:3000", "https://www.embagent.com"],  # Add your frontend URL here
     allow_credentials=True,
+    allow_methods=["*"],        # allows GET, POST, PUT, DELETE, OPTIONS, etc.
+    allow_headers=["*"],        # allows any request headers
 )
 
-# Mount the routers
-app.include_router(upload_router, prefix="")   # POST /upload
-app.include_router(chat_router,   prefix="")   # POST /chat
+# 2) Then include your routers
+app.include_router(upload.router, prefix="/upload", tags=["upload"])
+app.include_router(chat.router, prefix="/chat", tags=["chat"])
 @app.get("/")
 def home():
     return {"msg": "Embagent API running"}
