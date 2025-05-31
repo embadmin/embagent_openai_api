@@ -1,31 +1,27 @@
-
-from backend.routers import upload, chat
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Import your routers
+from routers.upload import router as upload_router
+from routers.chat   import router as chat_router
+
 app = FastAPI()
 
-# 1. List the origins you want to allow. For dev you can use ["*"], but
-#    in production you should list only your actual frontend domain(s).
-origins = [
-    "http://localhost:3000/embagent",           # your local dev site
-    "https://www.embagent.com",      # your production site
-    # add more as needed
-]
-
-# 2. Add the CORS middleware BEFORE you include your routers
+# === CORS setup ===
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,             # or ["*"] during quick testing
+    allow_origins=[
+      "http://localhost:3000",
+      "https://www.embagent.com",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],               # GET, POST, PUT, etc.
-    allow_headers=["*"],               # allow Authorization, Content-Type, etc.
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# 3. Now include your existing routers
-from backend.routers import chat   # or however you import it
-app.include_router(chat.router, prefix="/chat")
-# … any other routers …
+# === Mount the upload and chat endpoints ===
+app.include_router(upload_router, prefix="")   # handles POST /upload
+app.include_router(chat_router,   prefix="")   # handles POST /chat
 @app.get("/")
 def home():
     return {"msg": "Embagent API running"}
