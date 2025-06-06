@@ -1,37 +1,43 @@
+# ─────────────────────────────────────────────────────────────────────────
 # backend/routers/upload.py
+# ─────────────────────────────────────────────────────────────────────────
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
-from typing import List
-import textract  # or any library you use for extracting text from files
+from typing  import List
 
 router = APIRouter()
 
 @router.post("/", summary="Upload knowledge files")
 async def upload_files(
     files: List[UploadFile] = File(...),
-    usecase: str = Form(...),
-    expertise: str = Form(""),
-    etiquette: str = Form(""),
-    links: str = Form(""),
+    usecase: str            = Form(...),
+    expertise: str          = Form(""),
+    etiquette: str          = Form(""),
+    links: str              = Form(""),
 ):
     """
-    1) Accept multiple files, extract text, and combine into one large string.
-    2) Return that combined text so the front-end can store it as `knowledgeText`.
+    1) Accept multiple UploadFile objects.
+    2) Read each upload as raw bytes, decode as UTF-8 (for plain .txt).
+    3) Return combined text under 'knowledgeText'.
     """
+
     all_text = []
     for upload_file in files:
         try:
-            # read file contents
-            contents = await upload_file.read()
-            # extract text (depending on file type)
-            text = textract.process(upload_file.filename, input_data=contents).decode("utf-8")
+            # Read the file's raw bytes
+            raw_bytes = await upload_file.read()
+            # Decode as UTF-8 (ignoring any non-UTF8 sequences)
+            text = raw_bytes.decode("utf-8", errors="ignore")
             all_text.append(text)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to extract {upload_file.filename}: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not process `{upload_file.filename}`: {str(e)}"
+            )
 
-    combined = "\n\n".join(all_text).strip()
-    return JSONResponse({
-        "filename_list": [f.filename for f in files],
-        "knowledgeText": combined
-    })
+    combined_text = "\n\n".join(all_text).strip()
+
+    return {
+        "filename_list":   [f.filename for f in files],
+        "knowledgeText":   combined_text
+    }
