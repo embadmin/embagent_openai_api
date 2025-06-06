@@ -16,6 +16,7 @@ async def upload_files(
     links: str              = Form(""),
 ):
     """
+    
     1) Accept multiple UploadFile objects.
     2) Read each upload as raw bytes, decode as UTF-8 (for plain .txt).
     3) Return combined text under 'knowledgeText'.
