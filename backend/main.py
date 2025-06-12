@@ -19,7 +19,7 @@ async def reject_http(request: Request, call_next):
 # 🔐 2) THEN apply CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # Replace "*" with your frontend's origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
