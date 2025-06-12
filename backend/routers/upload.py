@@ -1,11 +1,39 @@
-# ─────────────────────────────────────────────────────────────────────────
-# backend/routers/upload.py
-# ─────────────────────────────────────────────────────────────────────────
-
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from typing  import List
+from typing import List
+from backend.services.openai_service import generate_bot_intro
+import fitz  # PyMuPDF for PDFs
+import docx2txt
+from PIL import Image
+import io
 
 router = APIRouter()
+
+async def extract_text(upload_file: UploadFile) -> str:
+    filename = upload_file.filename.lower()
+
+    raw_bytes = await upload_file.read()
+
+    if filename.endswith(".txt"):
+        return raw_bytes.decode("utf-8", errors="ignore")
+
+    elif filename.endswith(".pdf"):
+        try:
+            doc = fitz.open(stream=raw_bytes, filetype="pdf")
+            return "\n".join([page.get_text() for page in doc])
+        except Exception as e:
+            raise HTTPException(400, f"Failed to read PDF: {str(e)}")
+
+    elif filename.endswith(".docx"):
+        with open(f"/tmp/{filename}", "wb") as f:
+            f.write(raw_bytes)
+        return docx2txt.process(f"/tmp/{filename}")
+
+    elif filename.endswith((".png", ".jpg", ".jpeg")):
+        # Optionally integrate OCR here (placeholder for now)
+        return f"[Image file {filename} uploaded]"
+
+    else:
+        return f"[Unsupported file type: {filename}]"
 
 @router.post("/", summary="Upload knowledge files")
 async def upload_files(
@@ -13,32 +41,22 @@ async def upload_files(
     usecase: str            = Form(...),
     expertise: str          = Form(""),
     etiquette: str          = Form(""),
-    links: str              = Form(""),
+    links: str              = Form("")
 ):
     """
-    
-    1) Accept multiple UploadFile objects.
-    2) Read each upload as raw bytes, decode as UTF-8 (for plain .txt).
-    3) Return combined text under 'knowledgeText'.
+    Accept files, extract text, and generate agent intro via OpenAI.
     """
+    try:
+        all_text = [await extract_text(f) for f in files]
+        combined_text = "\n\n".join(all_text)
 
-    all_text = []
-    for upload_file in files:
-        try:
-            # Read the file's raw bytes
-            raw_bytes = await upload_file.read()
-            # Decode as UTF-8 (ignoring any non-UTF8 sequences)
-            text = raw_bytes.decode("utf-8", errors="ignore")
-            all_text.append(text)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Could not process `{upload_file.filename}`: {str(e)}"
-            )
+        # 🔥 Use OpenAI to summarize & introduce
+        knowledge_text = generate_bot_intro(combined_text, usecase)
 
-    combined_text = "\n\n".join(all_text).strip()
+        return {
+            "filename_list": [f.filename for f in files],
+            "knowledgeText": knowledge_text
+        }
 
-    return {
-        "filename_list":   [f.filename for f in files],
-        "knowledgeText":   combined_text
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

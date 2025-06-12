@@ -1,6 +1,8 @@
+python-docx
+docx2txt
+PyMuPDF
+Pillow
+openai
 fastapi
 uvicorn
-python-multipart
-openai
-PyPDF2
-python-docx
+python-dotenv
