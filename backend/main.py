@@ -1,23 +1,25 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from backend.routers import upload, chat
 
 app = FastAPI()
 
 # 🔁 1) HTTPS Redirect Middleware FIRST
-# @app.middleware("http")
-# async def redirect_to_https(request: Request, call_next):
-#     # 👇 Check Render's forwarded protocol
-#     forwarded_proto = request.headers.get("x-forwarded-proto")
-#     if forwarded_proto == "http":
-#         url = request.url.replace(scheme="https")
-#         return RedirectResponse(url=str(url))
-#     return await call_next(request)curl -I https://embagent-openai-api.onrender.com/upload
+
+@app.middleware("http")
+async def reject_http(request: Request, call_next):
+    proto = request.headers.get("x-forwarded-proto")
+    if proto == "http":
+        return JSONResponse(
+            content={"error": "HTTPS only"},
+            status_code=400
+        )
+    return await call_next(request)
 # 🔐 2) THEN apply CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://www.embagent.com"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
